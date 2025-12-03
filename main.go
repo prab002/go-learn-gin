@@ -1,29 +1,29 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"learngo.com/controller"
-	"learngo.com/initializers"
+	"fmt"
+	"time"
 )
 
-func init() {
-	initializers.LoadEnvVariable()
-	initializers.DbConnect()
+/*
+	This is the demonstration for the GO_routine light weight threads
+	@you will lean how the multi thread works here
+*/
+
+func Worker(url string) string {
+	time.Sleep(50 * time.Millisecond)
+
+	fmt.Println("Url:", url)
+	return url
 }
 
 func main() {
-	r := gin.Default()
+	startTime := time.Now()
 
-	// Group all post routes under /posts
-	posts := r.Group("/posts")
-	{
-		posts.POST("/", controller.PostsCreate)        // POST /posts
-		posts.GET("/", controller.PostRead)            // GET /posts
-		posts.GET("/:id", controller.ReadSinglePost)   // GET /posts/:id
-		posts.PUT("/:id", controller.UpdateSinglePost) // PUT /posts/:id
-		// you can add:
-		// posts.DELETE("/:id", controller.DeletePost)
-	}
+	result := Worker("don.jpg")
+	fmt.Println("this is result:", result)
 
-	r.Run()
+	elapsed := time.Since(startTime)
+	fmt.Printf("took time: %d ms\n", elapsed.Milliseconds())
+	fmt.Printf("took time (precise): %s\n", elapsed)
 }
