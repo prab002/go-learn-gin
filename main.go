@@ -7,43 +7,55 @@ import (
 )
 
 /*
-	This is the demonstration for the GO_routine light weight threads
-	@you will lean how the multi thread works here
+	This is the demonstration for GO routines (lightweight threads)
+	You will learn how the multi-thread works here
 */
 
-func Worker(url string, wg *sync.WaitGroup, resultChanel chan string) {
+type Result struct {
+	value string
+	err   error
+}
+
+func Worker(url string, wg *sync.WaitGroup, resultChannel chan Result) {
 	defer wg.Done()
 	time.Sleep(50 * time.Millisecond)
 
-	fmt.Println("Url:", url)
+	// Proper formatting for printing
+	fmt.Printf("Url: %v\n", url)
 
-	resultChanel <- url
-
+	resultChannel <- Result{
+		value: url,
+		err:   nil,
+	}
 }
 
 func main() {
 	startTime := time.Now()
-	var wg sync.WaitGroup                // --> this should be added as worker run in other concurrent than main thread
-	resultChanel := make(chan string, 3) // -> need to pass the chanel as worker will pass the data to channel and from channel we will received data to main thread
+	var wg sync.WaitGroup
+	resultChannel := make(chan Result, 3) // buffered to 3 since we spawn 3 workers
 
 	/*
 		GO Routine life cycle
-		fan out --> main thread to worker/ ( light weight thread )
-		fan in --> worker thread to main thread
-
-		main --> worker --> worker to channel --> channel to main thead
+		fan out --> main thread to worker (lightweight threads)
+		fan in  --> worker thread to main thread
+		main --> worker --> worker -> channel --> channel -> main thread
 	*/
 
-	wg.Add(3)                               // --> need to pass how many thread we are running as worker
-	go Worker("don.jpg", &wg, resultChanel) // --> need to pass as the refer &wg
-	go Worker("don1.jpg", &wg, resultChanel)
-	go Worker("don2.jpg", &wg, resultChanel)
+	wg.Add(3)
+	go Worker("don.jpg", &wg, resultChannel)
+	go Worker("don1.jpg", &wg, resultChannel)
+	go Worker("don2.jpg", &wg, resultChannel)
 
+	// wait for all workers to finish sending
 	wg.Wait()
 
-	close(resultChanel)
-	for result := range resultChanel {
-		print("received \n:", result)
+	// close channel after all sends are done
+	close(resultChannel)
+
+	// consume results
+	for result := range resultChannel {
+		// Print with field names for clarity
+		fmt.Printf("received: value=%q err=%v\n", result)
 	}
 
 	elapsed := time.Since(startTime)
